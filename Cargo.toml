@@ -1,0 +1,12 @@
+[package]
+name = "cookie-fe"
+version = "0.1.0"
+authors = ["kardeiz <kardeiz@gmail.com>"]
+
+[dependencies]
+cookie = "0.2"
+iron = "0.2"
+
+[dev-dependencies]
+router = "*"
+time = "*"
