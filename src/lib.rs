@@ -14,14 +14,16 @@ pub struct Util(&'static [u8], Option<CookieJar<'static>>);
 
 impl Util {
 
+    fn ext_jar<'a>(req: &'a mut Request) -> Option<&'a CookieJar<'static>> {
+        req.extensions.get::<Util>().and_then(|x| x.1.as_ref() )
+    }
+
     pub fn jar<'a>(req: &'a mut Request) -> &'a CookieJar<'static> {
         if let Some(mut util) = req.extensions.get_mut::<Util>() {
-            if let Some(ref j) = util.1 {
-                return &j;
-            } else {
+            if util.1.is_none() { 
                 util.1 = Some(CookieJar::new(util.0));
-                if let Some(ref j) = util.1 { return &j; }
             }
+            if let Some(ref j) = util.1 { return &j; }
         }
         panic!("Cannot use cookie jar in this location");
     }
@@ -58,10 +60,13 @@ impl<H: Handler> Handler for Wrapper<H> {
         let mut res = self.handler.handle(req);
 
         if let Ok(&mut ref mut r) = res.as_mut() {
-            let delta = Util::jar(req).delta();
-            if !delta.is_empty() {
-                r.headers.set(SetCookie(delta));
-            }      
+            if let Some(jar) = Util::ext_jar(req) {
+                println!("{:?}", "setting jar");
+                let delta = jar.delta();
+                if !delta.is_empty() {
+                    r.headers.set(SetCookie(delta));
+                } 
+            }                 
         }
 
         res

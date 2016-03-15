@@ -15,6 +15,12 @@ use cookie_fe::{Builder as CookieBuilder, Util as CookieUtil, CookiePair};
 
 const KEY: &'static [u8] = b"4b8eee793a846531d6d95dd66ae48319";
 
+fn a(req: &mut Request) -> IronResult<Response> {
+    let mut res = Response::with((status::Ok));
+    res.set_mut("No cookie activity here");
+    Ok(res)
+}
+
 fn root(req: &mut Request) -> IronResult<Response> {
 
     let mut res = Response::with((status::Ok));
@@ -38,6 +44,7 @@ fn root(req: &mut Request) -> IronResult<Response> {
 fn main() {
     let mut router = Router::new();
     router.get("/", root);
+    router.get("/a", a);
     let mut chain = Chain::new(router);
     let wrapped = CookieBuilder(KEY).around(Box::new(chain));
     Iron::new(wrapped).http("0.0.0.0:3000").unwrap();
