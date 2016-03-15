@@ -22,11 +22,11 @@ fn root(req: &mut Request) -> IronResult<Response> {
     let jar = CookieUtil::jar(req);
 
     let cookie = CookiePair::new("foo".to_string(), 
-      format!("{}", time::now().rfc3339()));
+        format!("{}", time::now().rfc3339()));
 
     let old = jar.signed().find("foo")
-      .map(|x| x.value )
-      .unwrap_or_else(|| "none".to_string() );
+        .map(|x| x.value )
+        .unwrap_or_else(|| "none".to_string() );
 
     jar.signed().add(cookie);
 
