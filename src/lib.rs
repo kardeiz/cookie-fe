@@ -18,14 +18,15 @@ impl Util {
         req.extensions.get::<Util>().and_then(|x| x.1.as_ref() )
     }
 
-    pub fn jar<'a>(req: &'a mut Request) -> &'a CookieJar<'static> {
+    pub fn jar<'a>(req: &'a mut Request) -> Option<&'a CookieJar<'static>> {
         if let Some(mut util) = req.extensions.get_mut::<Util>() {
             if util.1.is_none() { 
                 util.1 = Some(CookieJar::new(util.0));
             }
-            if let Some(ref j) = util.1 { return &j; }
+            util.1.as_ref()
+        } else {
+            None
         }
-        panic!("Cannot use cookie jar in this location");
     }
 
 }

@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate iron;
 
 extern crate cookie_fe;
@@ -25,7 +26,7 @@ fn root(req: &mut Request) -> IronResult<Response> {
 
     let mut res = Response::with((status::Ok));
 
-    let jar = CookieUtil::jar(req);
+    let jar = iexpect!(CookieUtil::jar(req));
 
     let cookie = CookiePair::new("foo".to_string(), 
         format!("{}", time::now().rfc3339()));
