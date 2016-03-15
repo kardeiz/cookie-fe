@@ -61,7 +61,6 @@ impl<H: Handler> Handler for Wrapper<H> {
 
         if let Ok(&mut ref mut r) = res.as_mut() {
             if let Some(jar) = Util::ext_jar(req) {
-                println!("{:?}", "setting jar");
                 let delta = jar.delta();
                 if !delta.is_empty() {
                     r.headers.set(SetCookie(delta));
