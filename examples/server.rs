@@ -11,15 +11,15 @@ use iron::AroundMiddleware;
 
 use router::Router;
 
-use cookie_fe::{CookieWrapper, WithCookieJar, CookiePair};
+use cookie_fe::{Builder as CookieBuilder, Util as CookieUtil, CookiePair};
 
 const KEY: &'static [u8] = b"4b8eee793a846531d6d95dd66ae48319";
 
-fn hello(req: &mut Request) -> IronResult<Response> {
+fn root(req: &mut Request) -> IronResult<Response> {
 
     let mut res = Response::with((status::Ok));
 
-    let jar = req.cookie_jar().unwrap();
+    let jar = CookieUtil::jar(req);
 
     let cookie = CookiePair::new("foo".to_string(), 
       format!("{}", time::now().rfc3339()));
@@ -37,8 +37,8 @@ fn hello(req: &mut Request) -> IronResult<Response> {
 
 fn main() {
     let mut router = Router::new();
-    router.get("/", hello);
+    router.get("/", root);
     let mut chain = Chain::new(router);
-    let wrapped = CookieWrapper(KEY).around(Box::new(chain));
+    let wrapped = CookieBuilder(KEY).around(Box::new(chain));
     Iron::new(wrapped).http("0.0.0.0:3000").unwrap();
 }

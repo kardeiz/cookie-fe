@@ -3,59 +3,112 @@ extern crate cookie;
 
 use iron::prelude::*;
 use iron::{AroundMiddleware, Handler, typemap};
-
 use iron::headers::{Cookie, SetCookie};
 
 pub use cookie::CookieJar;
 pub use cookie::Cookie as CookiePair;
 
-pub struct CookieWrapper(pub &'static [u8]);
+pub struct Builder(pub &'static [u8]);
 
-pub struct CookieJarProxy;
+pub struct Util(pub &'static [u8], pub Option<CookieJar<'static>>);
 
-impl typemap::Key for CookieJarProxy { type Value = CookieJar<'static>; }
+impl Util {
 
-struct CookieWrapperHandler<H: Handler> { 
-  cookie_wrapper: CookieWrapper, 
-  handler: H
+    pub fn jar<'a>(req: &'a mut Request) -> &'a CookieJar<'static> {
+        if let Some(mut util) = req.extensions.get_mut::<Util>() {
+            if let Some(ref j) = util.1 {
+                return &j;
+            } else {
+                util.1 = Some(CookieJar::new(util.0));
+                if let Some(ref j) = util.1 { return &j; }
+            }
+        }
+        panic!("Cannot use cookie jar in this location");
+    }
+
 }
 
-impl<H: Handler> Handler for CookieWrapperHandler<H> {
-  fn handle(&self, req: &mut Request) -> IronResult<Response> {
-    
-    if let Some(cookie) = req.headers.get::<Cookie>() {
-      let jar = cookie.to_cookie_jar(self.cookie_wrapper.0);
-      req.extensions.insert::<CookieJarProxy>(jar);
+impl typemap::Key for Util { type Value = Self; }
+
+impl AroundMiddleware for Builder {
+    fn around(self, handler: Box<Handler>) -> Box<Handler> {
+        Box::new(Wrapper {
+            builder: self,
+            handler: handler
+        }) as Box<Handler>
     }
+}
+
+
+struct Wrapper<H: Handler> { 
+    builder: Builder, 
+    handler: H
+}
+
+impl<H: Handler> Handler for Wrapper<H> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+
+        let jar = req.headers.get::<Cookie>()
+            .map(|x| x.to_cookie_jar(self.builder.0) );
+
+        let util = Util(self.builder.0, jar);
+
+        req.extensions.insert::<Util>(util);
         
-    let mut res = self.handler.handle(req);
+        let mut res = self.handler.handle(req);
 
-    if let Ok(&mut ref mut _res) = res.as_mut() {
-      if let Some(jar) = req.cookie_jar() {
-        _res.headers.set(SetCookie( jar.delta() ));
-      }
+        if let Ok(&mut ref mut r) = res.as_mut() {
+            let delta = Util::jar(req).delta();
+            if !delta.is_empty() {
+                r.headers.set(SetCookie(delta));
+            }      
+        }
+
+        res
     }
-
-    res
-  }
 }
 
-impl AroundMiddleware for CookieWrapper {
-  fn around(self, handler: Box<Handler>) -> Box<Handler> {
-    Box::new(CookieWrapperHandler {
-      cookie_wrapper: self,
-      handler: handler
-    }) as Box<Handler>
-  }
-}
 
-pub trait WithCookieJar {
-  fn cookie_jar(&self) -> Option<&CookieJar<'static>>;
-}
+// pub struct Builder(&'static [u8]);
 
-impl<'a, 'b> WithCookieJar for Request<'a, 'b> {
-  fn cookie_jar(&self) -> Option<&CookieJar<'static>> {
-    self.extensions.get::<CookieJarProxy>()
-  }
-}
+// pub struct Proxy {
+//     pub key: &'static [u8], 
+//     pub jar: Option<CookieJar<'static>>
+// }
+
+// impl Proxy {
+
+//     pub fn cookie_jar<'a>(req: &'a mut Request) -> &'a CookieJar<'static> {
+//         let proxy = req.extensions.get::<Proxy>().expect("Bad");
+//         proxy.jar
+//         // if let Some(mut proxy) = req.extensions.get_mut::<Proxy>() {
+//         //     if let Some(jar) = proxy.jar {
+//         //         return jar.as_ref();
+//         //     }
+//         // }
+//         // panic!();
+//     }
+
+// }
+
+
+// impl typemap::Key for Proxy { type Value = Self; }
+// impl AroundMiddleware for Builder {
+//   fn around(self, handler: Box<Handler>) -> Box<Handler> {
+//     Box::new(Wrapper {
+//       builder: self,
+//       handler: handler
+//     }) as Box<Handler>
+//   }
+// }
+
+// pub trait WithCookieJar {
+//   fn cookie_jar(&self) -> &CookieJar<'static>;
+// }
+
+// impl<'a, 'b> WithCookieJar for Request<'a, 'b> {
+//   fn cookie_jar(&self) -> &CookieJar<'static> {
+//     self.extensions.get::<CookieJarProxy>().expect("No cookie jar found")
+//   }
+// }
 
