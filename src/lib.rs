@@ -10,7 +10,7 @@ pub use cookie::Cookie as CookiePair;
 
 pub struct Builder(pub &'static [u8]);
 
-pub struct Util(pub &'static [u8], pub Option<CookieJar<'static>>);
+pub struct Util(&'static [u8], Option<CookieJar<'static>>);
 
 impl Util {
 
