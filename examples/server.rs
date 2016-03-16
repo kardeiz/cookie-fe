@@ -26,7 +26,8 @@ fn root(req: &mut Request) -> IronResult<Response> {
 
     let mut res = Response::with((status::Ok));
 
-    let jar = iexpect!(CookieUtil::jar(req));
+    let jar = iexpect!(req.extensions.get_mut::<CookieUtil>()
+        .and_then(|x| x.jar()));
 
     let cookie = CookiePair::new("foo".to_string(), 
         format!("{}", time::now().rfc3339()));
