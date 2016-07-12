@@ -27,10 +27,11 @@ impl typemap::Key for Util { type Value = Self; }
 
 impl AroundMiddleware for Builder {
     fn around(self, handler: Box<Handler>) -> Box<Handler> {
-        Box::new(Wrapper {
+        let wrapper = Wrapper {
             builder: self,
             handler: handler
-        }) as Box<Handler>
+        };
+        Box::new(wrapper) as Box<Handler>
     }
 }
 
