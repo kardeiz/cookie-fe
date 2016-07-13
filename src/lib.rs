@@ -8,7 +8,12 @@ use iron::headers::{Cookie, SetCookie};
 pub use cookie::CookieJar;
 pub use cookie::Cookie as CookiePair;
 
-pub struct Builder(pub &'static [u8]);
+pub struct Builder(&'static [u8]);
+
+impl Builder {
+    pub fn new(key: &'static [u8]) -> Self { Builder(key) }
+}
+
 
 pub struct Util(&'static [u8], Option<CookieJar<'static>>);
 
