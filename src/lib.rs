@@ -14,7 +14,6 @@ impl Builder {
     pub fn new(key: &'static [u8]) -> Self { Builder(key) }
 }
 
-
 pub struct Util(&'static [u8], Option<CookieJar<'static>>);
 
 impl Util {

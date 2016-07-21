@@ -5,7 +5,7 @@ authors = ["kardeiz <kardeiz@gmail.com>"]
 
 [dependencies]
 cookie = "0.2"
-iron = "0.3"
+iron = ">= 0.3, <= 0.4"
 
 [dev-dependencies]
 router = "*"
